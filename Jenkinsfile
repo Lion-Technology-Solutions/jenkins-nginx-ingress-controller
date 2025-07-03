@@ -1,26 +1,30 @@
 pipeline {
     agent any
+    
     environment {
         CLUSTER_NAME = "prod"
         AWS_REGION = "us-east-2"
         HELM_CHART_VERSION = "4.10.1"
     }
-   stage('Configure AWS & EKS') {
-    steps {
-        withCredentials([[
-            $class: 'AmazonWebServicesCredentialsBinding',
-            credentialsId: 'AWS_CREDENTIALS',  // Must match credential ID
-            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        ]]) {
-            sh """
-            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
-            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
-            aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
-            """
+    
+    stages {
+        stage('Configure AWS & EKS') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'AWS_CREDENTIALS',
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                ]]) {
+                    sh """
+                    aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+                    aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+                    aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+                    """
+                }
+            }
         }
-    }
-}
+        
         stage('Add Helm Repo') {
             steps {
                 sh """
@@ -29,6 +33,7 @@ pipeline {
                 """
             }
         }
+        
         stage('Deploy Ingress Controller') {
             steps {
                 sh """
@@ -42,6 +47,7 @@ pipeline {
                 """
             }
         }
+        
         stage('Verify Deployment') {
             steps {
                 sh """
@@ -51,3 +57,17 @@ pipeline {
             }
         }
     }
+    
+    post {
+        always {
+            echo 'Pipeline completed - cleaning up workspace'
+            cleanWs()
+        }
+        success {
+            echo 'NGINX Ingress Controller deployed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed - check logs for details'
+        }
+    }
+}
