@@ -3,7 +3,7 @@ pipeline {
     environment {
         CLUSTER_NAME = 'prod'
         AWS_REGION = 'us-east-2'
-        HELM_CHART_VERSION = '4.10.1'  # Check latest version: https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+        HELM_CHART_VERSION = '4.10.1'  //# Check latest version: https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
     }
     stages {
         stage('Configure AWS CLI') {
