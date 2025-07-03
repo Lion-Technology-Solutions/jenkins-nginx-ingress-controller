@@ -5,16 +5,22 @@ pipeline {
         AWS_REGION = "us-east-2"
         HELM_CHART_VERSION = "4.10.1"
     }
-    stages {
-        stage('Configure AWS & EKS') {
-            steps {
-                withCredentials([aws(credentialsId: 'AWS_CREDENTIALS', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    sh """
-                    aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
-                    """
-                }
-            }
+   stage('Configure AWS & EKS') {
+    steps {
+        withCredentials([[
+            $class: 'AmazonWebServicesCredentialsBinding',
+            credentialsId: 'AWS_CREDENTIALS',  // Must match credential ID
+            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        ]]) {
+            sh """
+            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${CLUSTER_NAME}
+            """
         }
+    }
+}
         stage('Add Helm Repo') {
             steps {
                 sh """
